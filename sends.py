@@ -1,29 +1,33 @@
-def send_message(chat_id: int, text, parse_mode=False):
-    pass
+from settings import URL
+import requests
 
-def send_contact(chat_id: int, text, parse_mode=False):
-    pass
-
-def send_video(chat_id: int, text, parse_mode=False):
-    pass
-
-def send_location(chat_id: int, text, parse_mode=False):
-    pass
 
 def send_message(chat_id: int, text, parse_mode=False):
-    pass
+    url = URL + '/sendMessage'
+    payload = {
+        "chat_id": chat_id,
+        "text": text
+    }
 
-def send_message(chat_id: int, text, parse_mode=False):
-    pass
+    requests.get(url, params=payload)
 
-def send_message(chat_id: int, text, parse_mode=False):
-    pass
 
-def send_message(chat_id: int, text, parse_mode=False):
-    pass
+def send_voice(chat_id: int, voice: str):
+    url = URL + '/sendVoice'
+    payload = {
+        "chat_id": chat_id,
+        "voice": voice
+    }
 
-def send_message(chat_id: int, text, parse_mode=False):
-    pass
+    requests.get(url, params=payload)
 
-def send_message(chat_id: int, text, parse_mode=False):
-    pass
+def send_location(chat_id: int, latitude: float, longitude: float):
+    url = URL + '/sendLocation'
+    payload = {
+        "chat_id": chat_id,
+        "latitude": latitude,
+        "longitude": longitude	
+    }
+
+    requests.get(url, params=payload)
+
