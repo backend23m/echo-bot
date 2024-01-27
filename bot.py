@@ -1,140 +1,98 @@
-from settings import URL
+from settings import TOKEN
 import requests
 from time import sleep
+from pprint import pprint
+import sends
 
-def echobot_update(url: str):
-    endpoint = "/getUpdates"
-    url += endpoint
+
+def get_updates():
+    url = f'https://api.telegram.org/bot{TOKEN}/getUpdates'
     response = requests.get(url)
 
     if response.status_code == 200:
-        result = response.json()['result']
-
-        if len(result) != 0:
-            return result[-1]
-        else:
-            return 404
+        return response.json()['result']
     else:
-        return response.status_code
-
-def send_message(url: str, chat_id: int, text: str):
-    endpoint = '/sendMessage'
-    url += endpoint
-
-    payload = {
-        'chat_id': chat_id,
-        'text': text,
-    }
-    requests.get(url, params=payload)
+        return False
 
 
+def get_last_update(updates: list[dict]) -> dict:
+    return updates[-1]
 
-def send_voice(url: str, chat_id: int, voice_file_id: str, duration: int):
-    endpoint = '/sendVoice'
-    url += endpoint
+# pprint(get_updates())
 
-    params = {
-        'chat_id': chat_id,
-        'voice': voice_file_id,
-    }
-    requests.get(url, params=params)
+last_update_id = -1
+while True:
+    updates = get_updates()
+    # print(updates)
+    last_update = get_last_update(updates)
+    if last_update['update_id'] != last_update_id:
+            user = last_update['message']['from']
+            if "photo" in last_update['message'].keys():
+                photo=last_update['message']["photo"][0]["file_id"]
 
-def send_photo(url: str, chat_id: int, photo: str):
-    endpoint = '/sendPhoto'
-    url += endpoint
+                sends.send_photo(user["id"], photo)
+            
+            elif "text" in last_update['message'].keys():
 
-    payload = {
-        'chat_id': chat_id,
-        'photo': photo,
-    }
-    requests.get(url, params=payload)
+                text = last_update['message']['text']
+                sends.send_message(user["id"], text)
 
-def send_video(url: str, chat_id: int, video_file_id: str, duration: int):
-    endpoint = '/sendVideo'
-    url += endpoint
-
-    payload = {
-        'chat_id': chat_id,
-        'video': video_file_id,
-    }
-    requests.get(url, params=payload)
-
-def send_animation(url: str, chat_id: int, animation_file_id, duration: int):
-    endpoint = '/sendAnimation'
-    url+=endpoint
-
-    payload = {
-        'chat_id': chat_id,
-        'animation': animation_file_id,
-    }
-    requests.get(url, params=payload)
-
-def send_document(url: str, chat_id: int, file: str):
-    endpoint = '/sendDocument'
-    url += endpoint
-
-    payload = {
-        'chat_id': chat_id,
-        'document': document,
-    }
-    requests.get(url, params=payload)
-
-def send_contact(url: str, chat_id: int, phone_number: str, first_name: str): 
-    endpoint = '/sendContact'
-    payload = {
-        "chat_id": chat_id,
-        "phone_number": phone_number,
-        "first_name": first_name,
-    }
-    requests.get(url, params=payload)
-
-def send_location(url: str, chat_id: int, latitude: float, longitude: float):
-    endpoint = '/sendLocation'
-    payload = {
-        'chat_id': chat_id,
-        'latitude': latitude,
-        'longitude': longitude,
-    }
-    requests.get(url, params=payload)
-    
-    
-def main(url: str):
-    last_update_id = -1
-
-    while True:
-        update = echobot_update(url)
-
-        if update['update_id'] != last_update_id:
-            user = update['message']['from']
-            text = update['message'].get("text")
-            photo = update['message'].get("photo")
-            voice = update['message'].get("voice")
-            video = update['message'].get("video")
-            animation=update['message'].get("animation")
-            document=update['message'].get("document")
-            contact=update['message'].get("contact")
-            location=update['message'].get("location")
-
-            if text:
-                send_message(url, user['id'], text)
-            elif photo:
-                send_photo(url, user['id'], photo[-1]['file_id'])
-            elif voice:
-                send_voice(url, user['id'], voice['file_id'], voice['duration'])
-            elif video:
-                send_video(url, user['id'], video['file_id'], video['duration'])
-            elif animation:
-                send_animation(url, user['id'], animation['file_id'], animation['duration'])
-            elif photo:
-                send_document(url, user['id'], document[-1]['file_id'])
-            elif contact:
-                send_contact(url, user['id'],contact['phone_number'], contact['first_name'])
-            elif location:
-                send_location(url, user['id'], location['latitude'], location['longitude'])
+            elif "contact" in last_update['message'].keys():
+                 chat_id=user["id"]
+                 number=last_update['message']["contact"]["phone_number"]
+                 first_name=last_update['message']["contact"]["first_name"]
+                 if "last_name" in last_update["message"]['contact'].keys():
+                    last_name=last_update['message']["contact"]["last_name"]
+                    sends.send_contact(chat_id, number, first_name, last_name)
+                 else:
+                     sends.send_contact(chat_id, number, first_name)
                 
-            last_update_id = update['update_id']
 
-        sleep(0.5)
+            elif "location" in last_update["message"].keys():
 
-if __name__ == "__main__":
-    main(URL)
+                latitude=last_update["message"]["location"]["latitude"]                
+                longitude=last_update["message"]["location"]["longitude"]   
+                sends.send_location(user["id"], latitude, longitude)   
+
+            elif "video" in last_update["message"].keys():
+
+                video=last_update["message"]["video"]["file_id"]
+
+                sends.send_video(user["id"], video)
+            elif "document" in last_update["message"].keys():
+
+                document=last_update["message"]["document"]["file_id"]
+
+                sends.send_video(user["id"], document)
+
+            elif "voice" in last_update["message"].keys():
+
+                voice=last_update["message"]["voice"]["file_id"]
+
+                sends.send_video(user["id"], voice)
+            
+            elif "audio" in last_update["message"].keys():
+
+                audio=last_update["message"]["audio"]["file_id"]
+
+                sends.send_video(user["id"], audio)
+
+            elif "video_note" in last_update["message"].keys():
+
+                video_note=last_update["message"]["video_note"]["file_id"]
+
+                sends.send_video_note(user["id"], video_note)
+
+            elif "emoji" in last_update["message"].keys():
+
+                emoji=last_update["message"]["dice"]["emoji"]
+
+                sends.send_video_note(user["id"], emoji)
+
+            last_update_id = last_update['update_id']
+    sleep(0.5)
+
+
+
+
+    
