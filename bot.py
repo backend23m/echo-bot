@@ -18,7 +18,6 @@ def get_updates():
 def get_last_update(updates: list[dict]) -> dict:
     return updates[-1]
 
-# pprint(get_updates())
 
 last_update_id = -1
 while True:
